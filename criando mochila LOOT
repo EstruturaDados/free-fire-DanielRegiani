@@ -1,0 +1,368 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_STR_LEN 50
+#define TAM_MAX 10
+
+// ================== LISTA ESTÁTICA ==================
+
+typedef struct {
+    char dados[TAM_MAX][MAX_STR_LEN];
+    int quantidade;
+} ListaEstatica;
+
+void inicializarListaEstatica(ListaEstatica *lista) {
+    lista->quantidade = 10;
+}
+
+void inserirListaEstatica(ListaEstatica *lista, const char *texto) {
+    if (lista->quantidade == TAM_MAX) {
+        printf("Erro: Lista estatica cheia!\n");
+        return;
+    }
+
+    strncpy(lista->dados[lista->quantidade], texto, MAX_STR_LEN);
+    lista->dados[lista->quantidade][MAX_STR_LEN - 1] = '\0';
+
+    lista->quantidade++;
+    printf("Texto \"%s\" inserido com sucesso.\n", texto);
+}
+
+void removerListaEstatica(ListaEstatica *lista, const char *texto) {
+    int pos = -1;
+
+    for (int i = 0; i < lista->quantidade; i++) {
+        if (strcmp(lista->dados[i], texto) == 0) {
+            pos = i;
+            break;
+        }
+    }
+
+    if (pos == -1) {
+        printf("Erro: Texto \"%s\" nao encontrado.\n", texto);
+        return;
+    }
+
+    for (int i = pos; i < lista->quantidade - 1; i++) {
+        strcpy(lista->dados[i], lista->dados[i + 1]);
+    }
+
+    lista->quantidade--;
+    printf("Texto \"%s\" removido com sucesso.\n", texto);
+}
+
+void listarListaEstatica(const ListaEstatica *lista) {
+    if (lista->quantidade == 0) {
+        printf("A lista estatica esta vazia.\n");
+        return;
+    }
+
+    printf("\n--- ITENS DA LISTA ESTATICA ---\n");
+    for (int i = 0; i < lista->quantidade; i++) {
+        printf("%d - %s\n", i, lista->dados[i]);
+    }
+}
+
+int buscarListaEstatica(const ListaEstatica *lista, const char *texto) {
+    for (int i = 0; i < lista->quantidade; i++) {
+        if (strcmp(lista->dados[i], texto) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// ================== LISTA ENCADEADA ==================
+
+typedef struct No {
+    char *dado;
+    struct No *proximo;
+} No;
+
+typedef No* ListaEncadeada;
+
+void inicializarListaEncadeada(ListaEncadeada *lista) {
+    *lista = NULL;
+}
+
+void inserirListaEncadeada(ListaEncadeada *lista, const char *texto) {
+    No *novoNo = (No *)malloc(sizeof(No));
+
+    if (novoNo == NULL) {
+        printf("Erro na alocacao de memoria.\n");
+        return;
+    }
+
+    novoNo->dado = (char *)malloc(strlen(texto) + 1);
+    if (novoNo->dado == NULL) {
+        printf("Erro ao alocar memoria para o texto.\n");
+        free(novoNo);
+        return;
+    }
+
+    strcpy(novoNo->dado, texto);
+
+    novoNo->proximo = *lista;
+    *lista = novoNo;
+
+    printf("Texto \"%s\" inserido com sucesso.\n", texto);
+}
+
+void removerListaEncadeada(ListaEncadeada *lista, const char *texto) {
+    No *atual = *lista;
+    No *anterior = NULL;
+
+    while (atual != NULL && strcmp(atual->dado, texto) != 0) {
+        anterior = atual;
+        atual = atual->proximo;
+    }
+
+    if (atual == NULL) {
+        printf("Erro: Texto \"%s\" nao encontrado.\n", texto);
+        return;
+    }
+
+    if (anterior == NULL) {
+        *lista = atual->proximo;
+    } else {
+        anterior->proximo = atual->proximo;
+    }
+
+    free(atual->dado);
+    free(atual);
+
+    printf("Texto \"%s\" removido com sucesso.\n", texto);
+}
+
+void listarListaEncadeada(const ListaEncadeada lista) {
+    if (lista == NULL) {
+        printf("A lista encadeada esta vazia.\n");
+        return;
+    }
+
+    No *temp = lista;
+
+    printf("\n--- ITENS DA LISTA ENCADEADA ---\n");
+    while (temp != NULL) {
+        printf("- %s\n", temp->dado);
+        temp = temp->proximo;
+    }
+}
+
+No* buscarListaEncadeada(const ListaEncadeada lista, const char *texto) {
+    No *temp = lista;
+
+    while (temp != NULL) {
+        if (strcmp(temp->dado, texto) == 0) {
+            return temp;
+        }
+        temp = temp->proximo;
+    }
+
+    return NULL;
+}
+
+void liberarListaEncadeada(ListaEncadeada *lista) {
+    No *atual = *lista;
+    No *proximo;
+
+    while (atual != NULL) {
+        proximo = atual->proximo;
+        free(atual->dado);
+        free(atual);
+        atual = proximo;
+    }
+
+    *lista = NULL;
+}
+
+// ================== COMPARAÇÃO ==================
+
+void comparacaoBusca(const ListaEstatica *listaEstatica,
+                     const ListaEncadeada listaEncadeada,
+                     const char *texto) {
+    int pos = buscarListaEstatica(listaEstatica, texto);
+    No *n = buscarListaEncadeada(listaEncadeada, texto);
+
+    printf("\n--- COMPARACAO DE BUSCA ---\n");
+
+    printf("BUSCA HUMANA:\n");
+    printf("Uma pessoa analisaria item por item ate encontrar \"%s\"\n", texto);
+
+    printf("\nBUSCA AUTOMATIZADA:\n");
+
+    if (pos != -1)
+        printf("Lista Estatica -> Encontrado na posicao %d\n", pos);
+    else
+        printf("Lista Estatica -> Nao encontrado\n");
+
+    if (n != NULL)
+        printf("Lista Encadeada -> Encontrado com sucesso\n");
+    else
+        printf("Lista Encadeada -> Nao encontrado\n");
+
+    printf("\nConclusao: a busca automatizada eh mais rapida e eficiente.\n");
+}
+
+// ================== MENUS ==================
+
+void menuListaEstatica(ListaEstatica *lista) {
+    int opcao;
+    char texto[MAX_STR_LEN];
+
+    do {
+        printf("\n===== LISTA ESTATICA =====\n");
+        printf("1 - Inserir\n");
+        printf("2 - Remover\n");
+        printf("3 - Listar\n");
+        printf("4 - Buscar\n");
+        printf("0 - Voltar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        switch (opcao) {
+            case 1:
+                printf("Digite o texto: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+                inserirListaEstatica(lista, texto);
+                break;
+
+            case 2:
+                printf("Digite o texto para remover: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+                removerListaEstatica(lista, texto);
+                break;
+
+            case 3:
+                listarListaEstatica(lista);
+                break;
+
+            case 4: {
+                printf("Digite o texto para buscar: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+
+                int pos = buscarListaEstatica(lista, texto);
+
+                if (pos != -1)
+                    printf("Encontrado na posicao %d\n", pos);
+                else
+                    printf("Nao encontrado\n");
+
+                break;
+            }
+        }
+
+    } while (opcao != 0);
+}
+
+void menuListaEncadeada(ListaEncadeada *lista) {
+    int opcao;
+    char texto[MAX_STR_LEN];
+
+    do {
+        printf("\n===== LISTA ENCADEADA =====\n");
+        printf("1 - Inserir\n");
+        printf("2 - Remover\n");
+        printf("3 - Listar\n");
+        printf("4 - Buscar\n");
+        printf("0 - Voltar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        switch (opcao) {
+            case 1:
+                printf("Digite o texto: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+                inserirListaEncadeada(lista, texto);
+                break;
+
+            case 2:
+                printf("Digite o texto para remover: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+                removerListaEncadeada(lista, texto);
+                break;
+
+            case 3:
+                listarListaEncadeada(*lista);
+                break;
+
+            case 4: {
+                printf("Digite o texto para buscar: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+
+                No *resultado = buscarListaEncadeada(*lista, texto);
+
+                if (resultado != NULL)
+                    printf("Encontrado: %s\n", resultado->dado);
+                else
+                    printf("Nao encontrado\n");
+
+                break;
+            }
+        }
+
+    } while (opcao != 0);
+}
+
+// ================== MAIN ==================
+
+int main() {
+    ListaEstatica listaEstatica;
+    ListaEncadeada listaEncadeada;
+
+    inicializarListaEstatica(&listaEstatica);
+    inicializarListaEncadeada(&listaEncadeada);
+
+    int opcao;
+    char texto[MAX_STR_LEN];
+
+    do {
+        printf("\n===== MENU PRINCIPAL =====\n");
+        printf("1 - Lista Estatica\n");
+        printf("2 - Lista Encadeada\n");
+        printf("3 - Comparar Buscas\n");
+        printf("0 - Sair\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        getchar();
+
+        switch (opcao) {
+            case 1:
+                menuListaEstatica(&listaEstatica);
+                break;
+
+            case 2:
+                menuListaEncadeada(&listaEncadeada);
+                break;
+
+            case 3:
+                printf("Digite o texto para comparar nas duas listas: ");
+                fgets(texto, MAX_STR_LEN, stdin);
+                texto[strcspn(texto, "\n")] = '\0';
+
+                comparacaoBusca(&listaEstatica, listaEncadeada, texto);
+                break;
+
+            case 0:
+                printf("Encerrando programa...\n");
+                break;
+
+            default:
+                printf("Opcao invalida.\n");
+        }
+
+    } while (opcao != 0);
+
+    liberarListaEncadeada(&listaEncadeada);
+
+    return 0;
+}
